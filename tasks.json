@@ -1,9 +1,9 @@
 [
  {
   "id": 1,
-  "description": "Build Something",
-  "status": "ToDo",
-  "createdAt": "2026-10-01T11:02:02+01:00",
-  "updatedAt": "2026-10-01T11:02:02+01:00"
+  "description": "First task",
+  "status": "todo",
+  "createdAt": "2026-10-01T12:37:43+01:00",
+  "updatedAt": "2026-10-01T12:37:43+01:00"
  }
 ]
