@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -43,6 +44,7 @@ func main() {
 			fmt.Println("Error reading tasks", err)
 			return
 		}
+
 		command := os.Args[1]
 
 		if command == "list" {
@@ -90,6 +92,35 @@ func main() {
 			UpdatedAt:   now,
 		}
 		tasks = append(tasks, task)
+	} else {
+		if len(os.Args) >= 3 {
+			taskId := os.Args[2]
+			id, err := strconv.Atoi(taskId)
+			if err != nil {
+				fmt.Println("Error", err)
+				return
+			}
+			for i := range tasks {
+				if tasks[i].ID == id {
+					tasks[i].Status = "done"
+				}
+
+				data, err := json.MarshalIndent(tasks, "", " ")
+
+				if err != nil {
+					fmt.Println("Error while marshelling", err)
+					return
+				}
+
+				err = os.WriteFile("tasks.json", data, 0644)
+
+				if err != nil {
+					fmt.Println("Error while reading file", err)
+					return
+				}
+
+			}
+		}
 	}
 
 	data, err = json.MarshalIndent(tasks, "", " ")

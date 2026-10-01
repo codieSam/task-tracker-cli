@@ -2,7 +2,7 @@
  {
   "id": 1,
   "description": "First task",
-  "status": "todo",
+  "status": "done",
   "createdAt": "2026-10-01T12:37:43+01:00",
   "updatedAt": "2026-10-01T12:37:43+01:00"
  },
@@ -40,5 +40,12 @@
   "status": "done",
   "createdAt": "2026-10-01T16:53:14+01:00",
   "updatedAt": "2026-10-01T16:53:14+01:00"
+ },
+ {
+  "id": 7,
+  "description": "Python",
+  "status": "done",
+  "createdAt": "2026-10-01T18:00:53+01:00",
+  "updatedAt": "2026-10-01T18:00:53+01:00"
  }
 ]
