@@ -32,10 +32,6 @@ func main() {
 
 	command := os.Args[1]
 
-	if command == "list" {
-
-	}
-
 	now := time.Now().Format(time.RFC3339)
 
 	var tasks []Task
@@ -50,10 +46,20 @@ func main() {
 		command := os.Args[1]
 
 		if command == "list" {
+
 			for _, task := range tasks {
-				fmt.Println("id :", task.ID)
-				fmt.Println("description :", task.Description)
-				fmt.Println("status :", task.Status)
+				if len(os.Args) >= 3 {
+					cond := os.Args[2]
+					if task.Status == cond {
+						fmt.Println(task)
+					}
+				} else {
+					fmt.Println(task)
+				}
+
+				// fmt.Println("id :", task.ID)
+				// fmt.Println("description :", task.Description)
+				// fmt.Println("status :", task.Status)
 			}
 		}
 
@@ -75,10 +81,11 @@ func main() {
 			return
 		}
 		desc := os.Args[2]
+		status := os.Args[3]
 		task := Task{
 			ID:          newId,
 			Description: desc,
-			Status:      "todo",
+			Status:      status,
 			CreatedAt:   now,
 			UpdatedAt:   now,
 		}
