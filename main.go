@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"time"
 )
@@ -29,7 +30,12 @@ func main() {
 
 	// }
 
-	desc := os.Args[2]
+	command := os.Args[1]
+
+	if command == "list" {
+
+	}
+
 	now := time.Now().Format(time.RFC3339)
 
 	var tasks []Task
@@ -38,8 +44,17 @@ func main() {
 	if err == nil {
 		err = json.Unmarshal(data, &tasks)
 		if err != nil {
-			println("Error reading tasks", err)
+			fmt.Println("Error reading tasks", err)
 			return
+		}
+		command := os.Args[1]
+
+		if command == "list" {
+			for _, task := range tasks {
+				fmt.Println("id :", task.ID)
+				fmt.Println("description :", task.Description)
+				fmt.Println("status :", task.Status)
+			}
 		}
 
 	} else if !os.IsNotExist(err) {
@@ -54,27 +69,32 @@ func main() {
 		lastTask := tasks[len(tasks)-1]
 		newId = lastTask.ID + 1
 	}
-
-	task := Task{
-		ID:          newId,
-		Description: desc,
-		Status:      "todo",
-		CreatedAt:   now,
-		UpdatedAt:   now,
+	if command == "add" {
+		if len(os.Args) < 3 {
+			fmt.Println("Please provide description as well")
+			return
+		}
+		desc := os.Args[2]
+		task := Task{
+			ID:          newId,
+			Description: desc,
+			Status:      "todo",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		tasks = append(tasks, task)
 	}
-
-	tasks = append(tasks, task)
 
 	data, err = json.MarshalIndent(tasks, "", " ")
 
 	if err != nil {
-		println("Error marshalling tasks: ", err)
+		fmt.Println("Error marshalling tasks: ", err)
 		return
 	}
 
 	err = os.WriteFile("tasks.json", data, 0644)
 	if err != nil {
-		println("Error writing tasks to file: ", err)
+		fmt.Println("Error while printing the line", err)
 		return
 	}
 

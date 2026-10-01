@@ -5,5 +5,12 @@
   "status": "todo",
   "createdAt": "2026-10-01T12:37:43+01:00",
   "updatedAt": "2026-10-01T12:37:43+01:00"
+ },
+ {
+  "id": 2,
+  "description": "Second task",
+  "status": "todo",
+  "createdAt": "2026-10-01T15:33:45+01:00",
+  "updatedAt": "2026-10-01T15:33:45+01:00"
  }
 ]
