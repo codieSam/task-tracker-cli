@@ -92,7 +92,7 @@ func main() {
 			UpdatedAt:   now,
 		}
 		tasks = append(tasks, task)
-	} else {
+	} else if command == "mark-done" {
 		if len(os.Args) >= 3 {
 			taskId := os.Args[2]
 			id, err := strconv.Atoi(taskId)
@@ -115,12 +115,42 @@ func main() {
 				err = os.WriteFile("tasks.json", data, 0644)
 
 				if err != nil {
-					fmt.Println("Error while reading file", err)
+					fmt.Println("Error while writing file", err)
 					return
 				}
 
 			}
 		}
+
+	} else if command == "mark-in-progress" {
+		if len(os.Args) >= 3 {
+			newId := os.Args[2]
+			id, err := strconv.Atoi(newId)
+			if err != nil {
+				fmt.Println("Error", err)
+				return
+			}
+
+			for i := range tasks {
+				if tasks[i].ID == id {
+					tasks[i].Status = "in-progress"
+				}
+				data, err = json.MarshalIndent(tasks, "", " ")
+
+				if err != nil {
+					fmt.Println("Error while marshelling the go data", err)
+					return
+				}
+
+				err = os.WriteFile("tasks.json", data, 0644)
+				if err != nil {
+					fmt.Println("Error while writing file")
+					return
+				}
+
+			}
+		}
+
 	}
 
 	data, err = json.MarshalIndent(tasks, "", " ")
