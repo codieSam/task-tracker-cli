@@ -151,6 +151,33 @@ func main() {
 			}
 		}
 
+	} else if command == "update" {
+		if len(os.Args) >= 3 {
+			givenId := os.Args[2]
+			newDesc := os.Args[3]
+			id, err := strconv.Atoi(givenId)
+			if err != nil {
+				fmt.Println("Error while converting into int", err)
+				return
+			}
+			for i := range tasks {
+				if tasks[i].ID == id {
+					tasks[i].Description = newDesc
+					tasks[i].UpdatedAt = time.Now().Format(time.RFC3339)
+				}
+				data, err = json.MarshalIndent(tasks, "", " ")
+				if err != nil {
+					fmt.Println("Error whilw marshelling go data", err)
+					return
+				}
+				err = os.WriteFile("tasks.json", data, 0644)
+				if err != nil {
+					fmt.Println("Error while updating the description writing", err)
+					return
+				}
+
+			}
+		}
 	}
 
 	data, err = json.MarshalIndent(tasks, "", " ")
