@@ -180,6 +180,41 @@ func main() {
 		}
 	}
 
+	if command == "delete" {
+
+		if len(os.Args) >= 3 {
+			idToDelete := os.Args[2]
+			id, err := strconv.Atoi(idToDelete)
+			if err != nil {
+				fmt.Println("There is an error while printing", err)
+				return
+			}
+			found := false
+			for i := range tasks {
+				if tasks[i].ID == id {
+					tasks = append(tasks[:i], tasks[i+1:]...)
+					found = true
+					break
+				}
+			}
+			if !found {
+				fmt.Println("Tasks not found !")
+			}
+			data, err := json.MarshalIndent(tasks, "", " ")
+
+			if err != nil {
+				fmt.Println("Error while marshelling the go data", err)
+				return
+			}
+
+			err = os.WriteFile("tasks.json", data, 0644)
+			if err != nil {
+				fmt.Println("Error while writing the file", err)
+				return
+			}
+		}
+	}
+
 	data, err = json.MarshalIndent(tasks, "", " ")
 
 	if err != nil {
