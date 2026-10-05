@@ -16,6 +16,42 @@ type Task struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
+func loadTasks() []Task {
+
+	var tasks []Task
+
+	data, err := os.ReadFile("tasks.json")
+	if err == nil {
+		err = json.Unmarshal(data, &tasks)
+		if err != nil {
+			fmt.Println("Error reading tasks", err)
+			return tasks
+		}
+
+	} else if !os.IsNotExist(err) {
+		println("Error opening task file", err)
+	}
+
+	return tasks
+}
+
+func saveTasks(tasks []Task) error {
+	data, err := json.MarshalIndent(tasks, "", " ")
+
+	if err != nil {
+		fmt.Println("Error while marshelling", err)
+		return err
+	}
+
+	err = os.WriteFile("tasks.json", data, 0644)
+
+	if err != nil {
+		fmt.Println("Error while writing file", err)
+		return err
+	}
+	return nil
+}
+
 func main() {
 	// if len(os.Args) < 2 {
 	// 	fmt.Println("Please provide a command")
@@ -30,60 +66,51 @@ func main() {
 	// 	}
 
 	// }
-
+	if len(os.Args) <= 1 {
+		fmt.Println("Please provide at lease one command")
+		return
+	}
 	command := os.Args[1]
 
 	now := time.Now().Format(time.RFC3339)
 
-	var tasks []Task
+	tasks := loadTasks()
 
-	data, err := os.ReadFile("tasks.json")
-	if err == nil {
-		err = json.Unmarshal(data, &tasks)
-		if err != nil {
-			fmt.Println("Error reading tasks", err)
-			return
-		}
+	if command == "list" {
 
-		command := os.Args[1]
-
-		if command == "list" {
-
-			for _, task := range tasks {
-				if len(os.Args) >= 3 {
-					cond := os.Args[2]
-					if task.Status == cond {
-						fmt.Println(task)
-					}
-				} else {
+		for _, task := range tasks {
+			if len(os.Args) >= 3 {
+				cond := os.Args[2]
+				if task.Status == cond {
 					fmt.Println(task)
 				}
-
-				// fmt.Println("id :", task.ID)
-				// fmt.Println("description :", task.Description)
-				// fmt.Println("status :", task.Status)
+			} else {
+				fmt.Println(task)
 			}
+
+			// fmt.Println("id :", task.ID)
+			// fmt.Println("description :", task.Description)
+			// fmt.Println("status :", task.Status)
 		}
-
-	} else if !os.IsNotExist(err) {
-		println("Error opening task file", err)
-	}
-
-	var newId int
-
-	if len(tasks) == 0 {
-		newId = 1
-	} else {
-		lastTask := tasks[len(tasks)-1]
-		newId = lastTask.ID + 1
-	}
-	if command == "add" {
-		if len(os.Args) < 3 {
-			fmt.Println("Please provide description as well")
+	} else if command == "add" {
+		if len(os.Args) < 4 {
+			fmt.Println("Please provide complete details")
 			return
+		}
+		var newId int
+
+		if len(tasks) == 0 {
+			newId = 1
+		} else {
+			lastTask := tasks[len(tasks)-1]
+			newId = lastTask.ID + 1
 		}
 		desc := os.Args[2]
 		status := os.Args[3]
+		if status != "todo" && status != "in-progress" && status != "done" {
+			fmt.Println("Please provide a valid status")
+			return
+		}
 		task := Task{
 			ID:          newId,
 			Description: desc,
@@ -92,6 +119,7 @@ func main() {
 			UpdatedAt:   now,
 		}
 		tasks = append(tasks, task)
+		saveTasks(tasks)
 	} else if command == "mark-done" {
 		if len(os.Args) >= 3 {
 			taskId := os.Args[2]
@@ -100,26 +128,20 @@ func main() {
 				fmt.Println("Error", err)
 				return
 			}
+			found := false
 			for i := range tasks {
 				if tasks[i].ID == id {
 					tasks[i].Status = "done"
-				}
-
-				data, err := json.MarshalIndent(tasks, "", " ")
-
-				if err != nil {
-					fmt.Println("Error while marshelling", err)
-					return
-				}
-
-				err = os.WriteFile("tasks.json", data, 0644)
-
-				if err != nil {
-					fmt.Println("Error while writing file", err)
-					return
+					found = true
+					break
 				}
 
 			}
+			if !found {
+				fmt.Println("Provided ID doesn't exist")
+				return
+			}
+			saveTasks(tasks)
 		}
 
 	} else if command == "mark-in-progress" {
@@ -131,28 +153,25 @@ func main() {
 				return
 			}
 
+			found := false
+
 			for i := range tasks {
 				if tasks[i].ID == id {
 					tasks[i].Status = "in-progress"
-				}
-				data, err = json.MarshalIndent(tasks, "", " ")
-
-				if err != nil {
-					fmt.Println("Error while marshelling the go data", err)
-					return
-				}
-
-				err = os.WriteFile("tasks.json", data, 0644)
-				if err != nil {
-					fmt.Println("Error while writing file")
-					return
+					found = true
+					break
 				}
 
 			}
+			if !found {
+				fmt.Println("Provided ID doesn't exist")
+				return
+			}
+			saveTasks(tasks)
 		}
 
 	} else if command == "update" {
-		if len(os.Args) >= 3 {
+		if len(os.Args) >= 4 {
 			givenId := os.Args[2]
 			newDesc := os.Args[3]
 			id, err := strconv.Atoi(givenId)
@@ -165,22 +184,13 @@ func main() {
 					tasks[i].Description = newDesc
 					tasks[i].UpdatedAt = time.Now().Format(time.RFC3339)
 				}
-				data, err = json.MarshalIndent(tasks, "", " ")
-				if err != nil {
-					fmt.Println("Error whilw marshelling go data", err)
-					return
-				}
-				err = os.WriteFile("tasks.json", data, 0644)
-				if err != nil {
-					fmt.Println("Error while updating the description writing", err)
-					return
-				}
 
 			}
+			saveTasks(tasks)
+		} else {
+			fmt.Println("Please provide task ID and new description")
 		}
-	}
-
-	if command == "delete" {
+	} else if command == "delete" {
 
 		if len(os.Args) >= 3 {
 			idToDelete := os.Args[2]
@@ -194,44 +204,24 @@ func main() {
 				if tasks[i].ID == id {
 					tasks = append(tasks[:i], tasks[i+1:]...)
 					found = true
+					fmt.Printf("Task delete successfully")
 					break
 				}
 			}
 			if !found {
 				fmt.Println("Tasks not found !")
 			}
-			data, err := json.MarshalIndent(tasks, "", " ")
 
-			if err != nil {
-				fmt.Println("Error while marshelling the go data", err)
-				return
-			}
-
-			err = os.WriteFile("tasks.json", data, 0644)
-			if err != nil {
-				fmt.Println("Error while writing the file", err)
-				return
-			}
 		}
+		saveTasks(tasks)
+	} else {
+		fmt.Println("Command not found,please provide a valid command")
 	}
-
-	data, err = json.MarshalIndent(tasks, "", " ")
-
-	if err != nil {
-		fmt.Println("Error marshalling tasks: ", err)
-		return
-	}
-
-	err = os.WriteFile("tasks.json", data, 0644)
-	if err != nil {
-		fmt.Println("Error while printing the line", err)
-		return
-	}
-
-	// fmt.Println("ID: ", task.ID)
-	// fmt.Println("Description: ", task.Description)
-	// fmt.Println("Status: ", task.Status)
-	// fmt.Println("Created At: ", task.CreatedAt)
-	// fmt.Println("Updated At: ", task.UpdatedAt)
 
 }
+
+// fmt.Println("ID: ", task.ID)
+// fmt.Println("Description: ", task.Description)
+// fmt.Println("Status: ", task.Status)
+// fmt.Println("Created At: ", task.CreatedAt)
+// fmt.Println("Updated At: ", task.UpdatedAt)
