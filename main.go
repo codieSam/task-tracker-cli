@@ -52,96 +52,99 @@ func saveTasks(tasks []Task) error {
 	return nil
 }
 
+func addTask(tasks []Task) []Task {
+	if len(os.Args) < 4 {
+		fmt.Println("Please provide complete details")
+		return tasks
+	}
+	var newId int
+	now := time.Now().Format(time.RFC3339)
+
+	if len(tasks) == 0 {
+		newId = 1
+	} else {
+		lastTask := tasks[len(tasks)-1]
+		newId = lastTask.ID + 1
+	}
+	desc := os.Args[2]
+	status := os.Args[3]
+	if status != "todo" && status != "in-progress" && status != "done" {
+		fmt.Println("Please provide a valid status")
+		return tasks
+	}
+	task := Task{
+		ID:          newId,
+		Description: desc,
+		Status:      status,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	tasks = append(tasks, task)
+	saveTasks(tasks)
+	return tasks
+}
+
+func listTask(tasks []Task) {
+	for _, task := range tasks {
+		if len(os.Args) >= 3 {
+			cond := os.Args[2]
+			if task.Status == cond {
+				fmt.Println(task)
+			}
+		} else {
+			fmt.Println(task)
+		}
+
+		// fmt.Println("id :", task.ID)
+		// fmt.Println("description :", task.Description)
+		// fmt.Println("status :", task.Status)
+	}
+}
+
+func markDone(tasks []Task, taskID string) []Task {
+
+	id, err := strconv.Atoi(taskID)
+	if err != nil {
+		fmt.Println("Error", err)
+		return tasks
+	}
+	found := false
+	for i := range tasks {
+		if tasks[i].ID == id {
+			tasks[i].Status = "done"
+			found = true
+			break
+		}
+
+	}
+	if !found {
+		fmt.Println("Provided ID doesn't exist")
+		return tasks
+	}
+	saveTasks(tasks)
+	return tasks
+}
+
 func main() {
-	// if len(os.Args) < 2 {
-	// 	fmt.Println("Please provide a command")
-	// 	return
-	// }
 
-	// if len(os.Args) >= 3 {
-	// 	arg := os.Args[2]
-
-	// 	if os.Args[1] == "add" {
-	// 		fmt.Println("Adding task: ", arg)
-	// 	}
-
-	// }
 	if len(os.Args) <= 1 {
 		fmt.Println("Please provide at lease one command")
 		return
 	}
+
 	command := os.Args[1]
-
-	now := time.Now().Format(time.RFC3339)
-
 	tasks := loadTasks()
 
 	if command == "list" {
 
-		for _, task := range tasks {
-			if len(os.Args) >= 3 {
-				cond := os.Args[2]
-				if task.Status == cond {
-					fmt.Println(task)
-				}
-			} else {
-				fmt.Println(task)
-			}
+		listTask(tasks)
 
-			// fmt.Println("id :", task.ID)
-			// fmt.Println("description :", task.Description)
-			// fmt.Println("status :", task.Status)
-		}
 	} else if command == "add" {
-		if len(os.Args) < 4 {
-			fmt.Println("Please provide complete details")
-			return
-		}
-		var newId int
+		tasks = addTask(tasks)
 
-		if len(tasks) == 0 {
-			newId = 1
-		} else {
-			lastTask := tasks[len(tasks)-1]
-			newId = lastTask.ID + 1
-		}
-		desc := os.Args[2]
-		status := os.Args[3]
-		if status != "todo" && status != "in-progress" && status != "done" {
-			fmt.Println("Please provide a valid status")
-			return
-		}
-		task := Task{
-			ID:          newId,
-			Description: desc,
-			Status:      status,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
-		tasks = append(tasks, task)
-		saveTasks(tasks)
 	} else if command == "mark-done" {
 		if len(os.Args) >= 3 {
-			taskId := os.Args[2]
-			id, err := strconv.Atoi(taskId)
-			if err != nil {
-				fmt.Println("Error", err)
-				return
-			}
-			found := false
-			for i := range tasks {
-				if tasks[i].ID == id {
-					tasks[i].Status = "done"
-					found = true
-					break
-				}
-
-			}
-			if !found {
-				fmt.Println("Provided ID doesn't exist")
-				return
-			}
-			saveTasks(tasks)
+			tasks = markDone(tasks, os.Args[2])
 		}
 
 	} else if command == "mark-in-progress" {
