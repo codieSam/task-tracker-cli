@@ -85,20 +85,27 @@ func addTask(tasks []Task) []Task {
 }
 
 func listTask(tasks []Task) {
-	for _, task := range tasks {
-		if len(os.Args) >= 3 {
-			cond := os.Args[2]
-			if task.Status == cond {
-				fmt.Println(task)
-			}
-		} else {
-			fmt.Println(task)
-		}
+	if len(os.Args) < 3 {
+		fmt.Println(tasks)
 
-		// fmt.Println("id :", task.ID)
-		// fmt.Println("description :", task.Description)
-		// fmt.Println("status :", task.Status)
+	} else {
+		condition := os.Args[2]
+
+		if condition != "done" && condition != "todo" && condition != "in-progress" {
+			fmt.Println("Please provide the valid condition")
+			return
+		}
+		for _, task := range tasks {
+			if len(os.Args) >= 3 {
+				cond := os.Args[2]
+				if task.Status == cond {
+					fmt.Println(task)
+				}
+			}
+
+		}
 	}
+
 }
 
 func markDone(tasks []Task, taskID string) []Task {
@@ -125,6 +132,70 @@ func markDone(tasks []Task, taskID string) []Task {
 	return tasks
 }
 
+func markInProgress(tasks []Task, taskID string) []Task {
+	id, err := strconv.Atoi(taskID)
+	if err != nil {
+		fmt.Println("Error", err)
+		return tasks
+	}
+
+	found := false
+
+	for i := range tasks {
+		if tasks[i].ID == id {
+			tasks[i].Status = "in-progress"
+			found = true
+			break
+		}
+
+	}
+	if !found {
+		fmt.Println("Provided ID doesn't exist")
+		return tasks
+	}
+	saveTasks(tasks)
+	return tasks
+}
+
+func updateTask(tasks []Task, newID string, description string) []Task {
+	id, err := strconv.Atoi(newID)
+	if err != nil {
+		fmt.Println("Error while converting into int", err)
+		return tasks
+	}
+	for i := range tasks {
+		if tasks[i].ID == id {
+			tasks[i].Description = description
+			tasks[i].UpdatedAt = time.Now().Format(time.RFC3339)
+		}
+
+	}
+	saveTasks(tasks)
+	return tasks
+}
+
+func deleteTask(tasks []Task, newID string) []Task {
+	id, err := strconv.Atoi(newID)
+	if err != nil {
+		fmt.Println("There is an error while printing", err)
+		return tasks
+	}
+	found := false
+	for i := range tasks {
+		if tasks[i].ID == id {
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			found = true
+			fmt.Printf("Task delete successfully")
+			break
+		}
+	}
+	if !found {
+		fmt.Println("Tasks not found !")
+	}
+	saveTasks(tasks)
+	return tasks
+}
+
 func main() {
 
 	if len(os.Args) <= 1 {
@@ -136,7 +207,6 @@ func main() {
 	tasks := loadTasks()
 
 	if command == "list" {
-
 		listTask(tasks)
 
 	} else if command == "add" {
@@ -149,74 +219,21 @@ func main() {
 
 	} else if command == "mark-in-progress" {
 		if len(os.Args) >= 3 {
-			newId := os.Args[2]
-			id, err := strconv.Atoi(newId)
-			if err != nil {
-				fmt.Println("Error", err)
-				return
-			}
-
-			found := false
-
-			for i := range tasks {
-				if tasks[i].ID == id {
-					tasks[i].Status = "in-progress"
-					found = true
-					break
-				}
-
-			}
-			if !found {
-				fmt.Println("Provided ID doesn't exist")
-				return
-			}
-			saveTasks(tasks)
+			tasks = markInProgress(tasks, os.Args[2])
 		}
 
 	} else if command == "update" {
 		if len(os.Args) >= 4 {
-			givenId := os.Args[2]
-			newDesc := os.Args[3]
-			id, err := strconv.Atoi(givenId)
-			if err != nil {
-				fmt.Println("Error while converting into int", err)
-				return
-			}
-			for i := range tasks {
-				if tasks[i].ID == id {
-					tasks[i].Description = newDesc
-					tasks[i].UpdatedAt = time.Now().Format(time.RFC3339)
-				}
-
-			}
-			saveTasks(tasks)
+			updateTask(tasks, os.Args[2], os.Args[3])
 		} else {
 			fmt.Println("Please provide task ID and new description")
 		}
 	} else if command == "delete" {
 
 		if len(os.Args) >= 3 {
-			idToDelete := os.Args[2]
-			id, err := strconv.Atoi(idToDelete)
-			if err != nil {
-				fmt.Println("There is an error while printing", err)
-				return
-			}
-			found := false
-			for i := range tasks {
-				if tasks[i].ID == id {
-					tasks = append(tasks[:i], tasks[i+1:]...)
-					found = true
-					fmt.Printf("Task delete successfully")
-					break
-				}
-			}
-			if !found {
-				fmt.Println("Tasks not found !")
-			}
-
+			tasks = deleteTask(tasks, os.Args[2])
 		}
-		saveTasks(tasks)
+
 	} else {
 		fmt.Println("Command not found,please provide a valid command")
 	}
