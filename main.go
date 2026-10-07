@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -52,10 +53,10 @@ func saveTasks(tasks []Task) error {
 	return nil
 }
 
-func addTask(tasks []Task) []Task {
+func addTask(tasks []Task) ([]Task, error) {
 	if len(os.Args) < 4 {
 		fmt.Println("Please provide complete details")
-		return tasks
+		return tasks, nil
 	}
 	var newId int
 	now := time.Now().Format(time.RFC3339)
@@ -70,7 +71,7 @@ func addTask(tasks []Task) []Task {
 	status := os.Args[3]
 	if status != "todo" && status != "in-progress" && status != "done" {
 		fmt.Println("Please provide a valid status")
-		return tasks
+		return tasks, nil
 	}
 	task := Task{
 		ID:          newId,
@@ -80,8 +81,11 @@ func addTask(tasks []Task) []Task {
 		UpdatedAt:   now,
 	}
 	tasks = append(tasks, task)
-	saveTasks(tasks)
-	return tasks
+	err := saveTasks(tasks)
+	if err != nil {
+		fmt.Println("An error occured", err)
+	}
+	return tasks, nil
 }
 
 func listTask(tasks []Task) {
@@ -157,43 +161,53 @@ func markInProgress(tasks []Task, taskID string) []Task {
 	return tasks
 }
 
-func updateTask(tasks []Task, newID string, description string) []Task {
+func updateTask(tasks []Task, newID string, description string) ([]Task, error) {
 	id, err := strconv.Atoi(newID)
+
 	if err != nil {
-		fmt.Println("Error while converting into int", err)
-		return tasks
+		return tasks, err
 	}
+	var found bool
 	for i := range tasks {
 		if tasks[i].ID == id {
 			tasks[i].Description = description
 			tasks[i].UpdatedAt = time.Now().Format(time.RFC3339)
+			found = true
 		}
 
 	}
-	saveTasks(tasks)
-	return tasks
+	if !found {
+		return tasks, errors.New("ID doesn't exist.")
+	}
+	err = saveTasks(tasks)
+	if err != nil {
+		return tasks, err
+	}
+	return tasks, nil
 }
 
-func deleteTask(tasks []Task, newID string) []Task {
+func deleteTask(tasks []Task, newID string) ([]Task, error) {
 	id, err := strconv.Atoi(newID)
 	if err != nil {
-		fmt.Println("There is an error while printing", err)
-		return tasks
+		return tasks, err
 	}
 	found := false
 	for i := range tasks {
 		if tasks[i].ID == id {
 			tasks = append(tasks[:i], tasks[i+1:]...)
 			found = true
-			fmt.Printf("Task delete successfully")
+			fmt.Println("Task delete successfully")
 			break
 		}
 	}
 	if !found {
-		fmt.Println("Tasks not found !")
+		return tasks, errors.New("ID doesn't exist")
 	}
-	saveTasks(tasks)
-	return tasks
+	err = saveTasks(tasks)
+	if err != nil {
+		return tasks, err
+	}
+	return tasks, nil
 }
 
 func main() {
@@ -210,7 +224,12 @@ func main() {
 		listTask(tasks)
 
 	} else if command == "add" {
-		tasks = addTask(tasks)
+		var err error
+		tasks, err = addTask(tasks)
+		if err != nil {
+			fmt.Println("Error while adding task", err)
+			return
+		}
 
 	} else if command == "mark-done" {
 		if len(os.Args) >= 3 {
@@ -223,15 +242,25 @@ func main() {
 		}
 
 	} else if command == "update" {
+		var err error
 		if len(os.Args) >= 4 {
-			updateTask(tasks, os.Args[2], os.Args[3])
+			tasks, err = updateTask(tasks, os.Args[2], os.Args[3])
+			if err != nil {
+				fmt.Println("Error while updating the task", err)
+				return
+			}
 		} else {
 			fmt.Println("Please provide task ID and new description")
 		}
 	} else if command == "delete" {
-
+		var err error
 		if len(os.Args) >= 3 {
-			tasks = deleteTask(tasks, os.Args[2])
+			tasks, err = deleteTask(tasks, os.Args[2])
+			if err != nil {
+				fmt.Println("Error while deleting the task", err)
+				return
+			}
+
 		}
 
 	} else {
