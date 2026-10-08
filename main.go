@@ -84,6 +84,7 @@ func addTask(tasks []Task) ([]Task, error) {
 	err := saveTasks(tasks)
 	if err != nil {
 		fmt.Println("An error occured", err)
+		return tasks, err
 	}
 	return tasks, nil
 }
@@ -112,12 +113,11 @@ func listTask(tasks []Task) {
 
 }
 
-func markDone(tasks []Task, taskID string) []Task {
+func markDone(tasks []Task, taskID string) ([]Task, error) {
 
 	id, err := strconv.Atoi(taskID)
 	if err != nil {
-		fmt.Println("Error", err)
-		return tasks
+		return tasks, err
 	}
 	found := false
 	for i := range tasks {
@@ -129,11 +129,13 @@ func markDone(tasks []Task, taskID string) []Task {
 
 	}
 	if !found {
-		fmt.Println("Provided ID doesn't exist")
-		return tasks
+		return tasks, errors.New("ID doesn't exist.")
 	}
-	saveTasks(tasks)
-	return tasks
+	err = saveTasks(tasks)
+	if err != nil {
+		return tasks, err
+	}
+	return tasks, nil
 }
 
 func markInProgress(tasks []Task, taskID string) []Task {
@@ -232,8 +234,14 @@ func main() {
 		}
 
 	} else if command == "mark-done" {
+		var err error
 		if len(os.Args) >= 3 {
-			tasks = markDone(tasks, os.Args[2])
+			tasks, err = markDone(tasks, os.Args[2])
+			if err != nil {
+				fmt.Println("Error while marking done the task.", err)
+				return
+			}
+
 		}
 
 	} else if command == "mark-in-progress" {
