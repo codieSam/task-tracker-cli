@@ -17,7 +17,7 @@ type Task struct {
 	UpdatedAt   string `json:"updatedAt"`
 }
 
-func loadTasks() []Task {
+func loadTasks() ([]Task, error) {
 
 	var tasks []Task
 
@@ -26,28 +26,26 @@ func loadTasks() []Task {
 		err = json.Unmarshal(data, &tasks)
 		if err != nil {
 			fmt.Println("Error reading tasks", err)
-			return tasks
+			return tasks, err
 		}
 
 	} else if !os.IsNotExist(err) {
-		println("Error opening task file", err)
+		return tasks, err
 	}
 
-	return tasks
+	return tasks, nil
 }
 
 func saveTasks(tasks []Task) error {
 	data, err := json.MarshalIndent(tasks, "", " ")
 
 	if err != nil {
-		fmt.Println("Error while marshelling", err)
 		return err
 	}
 
 	err = os.WriteFile("tasks.json", data, 0644)
 
 	if err != nil {
-		fmt.Println("Error while writing file", err)
 		return err
 	}
 	return nil
@@ -221,7 +219,12 @@ func main() {
 	}
 
 	command := os.Args[1]
-	tasks := loadTasks()
+	tasks, err := loadTasks()
+
+	if err != nil {
+		fmt.Println("Error while loading the tasks.", err)
+		return
+	}
 
 	if command == "list" {
 		listTask(tasks)
